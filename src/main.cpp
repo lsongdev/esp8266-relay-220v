@@ -13,7 +13,7 @@ const char* apName = "ESP8266 Relay";
 const char* clientID = "esp8266-relay";
 const char* topic = "relay"; // Topic to control the relay
 
-const int RY1 = 0;
+const int RY1 = 4;
 const int LED = BUILTIN_LED;
 
 WiFiClient wlan;
