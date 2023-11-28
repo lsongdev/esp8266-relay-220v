@@ -2,14 +2,15 @@
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
 #include <PubSubClient.h>
-#include <EEPROM.h>
 
-const char* apName = "ESP8266 Relay";
-const char* clientID = "esp8266-relay-220v";
+const char *apName = "ESP8266 Relay";
+const char *clientID = "esp8266-relay-220v";
 const char *relayTopic = "esp8266-relay-220v";
 
 const int RY1 = 4;
-const int LED = LED_BUILTIN;
+const int BTN1 = 12;
+const int LED2 = 13;
+const int LED1 = LED_BUILTIN;
 
 WiFiClient wlan;
 PubSubClient mqtt(wlan);
@@ -41,33 +42,53 @@ void reconnect()
   }
 }
 
-void onMessage(char* topic, byte* payload, unsigned int length) {
+void onMessage(char *topic, byte *payload, unsigned int length)
+{
   // Handle received messages
   String payloadStr = "";
-  for (unsigned int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++)
+  {
     payloadStr += (char)payload[i];
   }
   Serial.println("Received message: [" + String(topic) + "] " + payloadStr);
 
-  if (strcmp(topic, relayTopic) == 0) { // Compare with the control topic
-    if (payloadStr == "relay1on") {
+  if (strcmp(topic, relayTopic) == 0)
+  { // Compare with the control topic
+    if (payloadStr == "relay1on")
+    {
       digitalWrite(RY1, HIGH); // Open the first relay
-    } else if (payloadStr == "relay1off") {
+    }
+    else if (payloadStr == "relay1off")
+    {
       digitalWrite(RY1, LOW); // Close the first relay
-    } else if (payloadStr == "led1on") {
-      digitalWrite(LED, LOW); // Turn on the LED
-    } else if (payloadStr == "led1off") {
-      digitalWrite(LED, HIGH); // Turn off the LED
+    }
+    else if (payloadStr == "led1on")
+    {
+      digitalWrite(LED1, LOW); // Turn on the LED
+    }
+    else if (payloadStr == "led1off")
+    {
+      digitalWrite(LED1, HIGH); // Turn off the LED
+    }
+    else if (payloadStr == "led2on")
+    {
+      digitalWrite(LED2, LOW); // Turn on the LED
+    }
+    else if (payloadStr == "led2off")
+    {
+      digitalWrite(LED2, HIGH); // Turn off the LED
     }
   }
 }
 
-void setup() {
+void setup()
+{
 
   Serial.begin(115200);
   pinMode(RY1, OUTPUT);
-  pinMode(LED, OUTPUT);
-  
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_mqtt_user);
@@ -80,8 +101,10 @@ void setup() {
   mqtt.setClient(wlan);
 }
 
-void loop() {
-  if (!mqtt.connected()) {
+void loop()
+{
+  if (!mqtt.connected())
+  {
     reconnect();
   }
   mqtt.loop();
