@@ -4,7 +4,7 @@
 
 const char *ssid = "wifi@lsong.one";
 const char *password = "song940@163.com";
-const char *mqttServer = "broker.emqx.io";
+const char *mqttServer = "mqtt.lsong.one";
 const char *clientID = "esp8266-relay-220v";
 const char *relayTopic = "esp8266-relay-220v";
 
@@ -23,6 +23,7 @@ void reconnect()
     if (mqtt.connect(clientID))
     {
       Serial.println("MQTT connected");
+      mqtt.publish(relayTopic, "online");
       mqtt.subscribe(relayTopic);
     }
     else
@@ -60,6 +61,8 @@ void onMessage(char *topic, byte *payload, unsigned int length)
     else if (payloadStr == "led1off")
     {
       digitalWrite(LED1, HIGH); // Turn off the LED
+    } else if (payloadStr == "ping") {
+      mqtt.publish(relayTopic, "pong");
     }
   }
 }
@@ -74,6 +77,7 @@ void setup()
   // Connect to WiFi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  WiFi.setAutoReconnect(true);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -84,9 +88,10 @@ void setup()
   Serial.println(WiFi.localIP());
 
   // Set the MQTT server and port
-  mqtt.setServer(mqttServer, 1883);
-  mqtt.setCallback(onMessage);
   mqtt.setClient(wlan);
+  mqtt.setServer(mqttServer, 1883);
+  mqtt.setKeepAlive(15);
+  mqtt.setCallback(onMessage);
 }
 
 void loop()
