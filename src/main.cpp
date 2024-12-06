@@ -1,35 +1,26 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <WiFiManager.h>
 #include <PubSubClient.h>
 
-const char *apName = "ESP8266 Relay";
+const char *ssid = "wifi@lsong.one";
+const char *password = "song940@163.com";
+const char *mqttServer = "broker.emqx.io";
 const char *clientID = "esp8266-relay-220v";
 const char *relayTopic = "esp8266-relay-220v";
 
 const int RY1 = 4;
 const int BTN1 = 12;
-const int LED2 = 13;
 const int LED1 = LED_BUILTIN;
 
 WiFiClient wlan;
 PubSubClient mqtt(wlan);
-WiFiManager wifiManager(apName);
-
-// Add custom parameters for configuring MQTT server information
-WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT Server", "192.168.8.160", 40);
-WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT Port", "1883", 6);
-WiFiManagerParameter custom_mqtt_user("mqtt_user", "MQTT User", "mqtt", 40);
-WiFiManagerParameter custom_mqtt_password("mqtt_password", "MQTT Password", "mqtt123", 40);
 
 void reconnect()
 {
-  String user = custom_mqtt_user.getValue();
-  String pass = custom_mqtt_password.getValue();
   while (!mqtt.connected())
   {
     Serial.println("Attempting to connect to the MQTT server...");
-    if (mqtt.connect(clientID, user.c_str(), pass.c_str()))
+    if (mqtt.connect(clientID))
     {
       Serial.println("MQTT connected");
       mqtt.subscribe(relayTopic);
@@ -70,14 +61,6 @@ void onMessage(char *topic, byte *payload, unsigned int length)
     {
       digitalWrite(LED1, HIGH); // Turn off the LED
     }
-    else if (payloadStr == "led2on")
-    {
-      digitalWrite(LED2, LOW); // Turn on the LED
-    }
-    else if (payloadStr == "led2off")
-    {
-      digitalWrite(LED2, HIGH); // Turn off the LED
-    }
   }
 }
 
@@ -87,16 +70,21 @@ void setup()
   Serial.begin(115200);
   pinMode(RY1, OUTPUT);
   pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
 
-  wifiManager.addParameter(&custom_mqtt_server);
-  wifiManager.addParameter(&custom_mqtt_port);
-  wifiManager.addParameter(&custom_mqtt_user);
-  wifiManager.addParameter(&custom_mqtt_password);
-  wifiManager.autoConnect();
+  // Connect to WiFi
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 
   // Set the MQTT server and port
-  mqtt.setServer(custom_mqtt_server.getValue(), atoi(custom_mqtt_port.getValue()));
+  mqtt.setServer(mqttServer, 1883);
   mqtt.setCallback(onMessage);
   mqtt.setClient(wlan);
 }
